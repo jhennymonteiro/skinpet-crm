@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { PeriodFilter, SheetsConfig } from '../types';
-import { Calendar, RefreshCw, FileSpreadsheet, Plus, Sparkles, Filter } from 'lucide-react';
+import { Calendar, RefreshCw, Dog } from 'lucide-react';
 
 interface HeaderProps {
   period: PeriodFilter;
@@ -56,11 +56,11 @@ export const Header: React.FC<HeaderProps> = ({
           <div>
             <div className="flex items-center gap-2.5">
               <div className="p-2 bg-blue-600 text-white rounded-lg shadow-sm">
-                <Sparkles className="w-5 h-5" />
+                <Dog className="w-5 h-5" />
               </div>
               <div>
                 <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-                  Dashboard Comercial
+                  Dashboard | SkinPet
                 </h1>
                 <p className="text-xs sm:text-sm text-slate-500 font-medium">
                   Acompanhamento em tempo real do funil de vendas
@@ -96,23 +96,6 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
             </div>
 
-            {/* Google Sheets Connection Status Button */}
-            <button
-              onClick={onOpenSheetsModal}
-              className={`flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-lg border transition-all ${
-                sheetsConfig.isConnected
-                  ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
-                  : 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'
-              }`}
-            >
-              <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-              <span className="hidden sm:inline">
-                {sheetsConfig.isConnected ? 'Google Sheets Conectado' : 'Conectar Planilha'}
-              </span>
-              <span className="sm:hidden">Planilha</span>
-              <span className={`w-2 h-2 rounded-full ${sheetsConfig.isConnected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
-            </button>
-
             {/* Manual Sync Refresh */}
             <button
               onClick={onRefreshData}
@@ -121,15 +104,6 @@ export const Header: React.FC<HeaderProps> = ({
               className="p-2 text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-all"
             >
               <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-blue-600' : ''}`} />
-            </button>
-
-            {/* New Lead Button */}
-            <button
-              onClick={onOpenNewLeadModal}
-              className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-lg shadow-xs transition-all cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Novo Lead</span>
             </button>
           </div>
         </div>

@@ -1,5 +1,5 @@
 {
-  "name": "Dashboard Comercial",
+  "name": "Dashboard | SkinPet",
   "description": "Acompanhamento em tempo real do funil de vendas integrado com Google Sheets",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Lead, FunnelStage, FUNNEL_STAGES, STAGE_COLORS } from '../types';
 import { formatCurrencyBRL } from '../lib/analytics';
-import { Plus, Edit2, Trash2, MessageCircle } from 'lucide-react';
+import { Trash2, MessageCircle } from 'lucide-react';
 
 interface KanbanBoardProps {
   leads: Lead[];
@@ -80,12 +80,6 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                         {lead.nome}
                       </span>
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={() => onEditLead(lead)}
-                          className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded"
-                        >
-                          <Edit2 className="w-3 h-3" />
-                        </button>
                         <button
                           onClick={() => onDeleteLead(lead.id)}
                           className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded"

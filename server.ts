@@ -13,14 +13,14 @@ async function startServer() {
   // In-memory data state acting as live sheet proxy/cache
   let storedLeads: Lead[] = [...INITIAL_MOCK_LEADS];
   let config = {
-    sheetUrl: '',
-    spreadsheetId: '',
+    sheetUrl: 'https://docs.google.com/spreadsheets/d/1kYnu0PDKn9oIOOQqYi2oN4qCt9C-da0sS2P4HuXBbTE/edit?gid=0#gid=0',
+    spreadsheetId: '1kYnu0PDKn9oIOOQqYi2oN4qCt9C-da0sS2P4HuXBbTE',
     sheetName: 'Sheet1',
     appsScriptUrl: '',
     autoSync: true,
     syncIntervalSeconds: 30,
     lastSyncedAt: new Date().toISOString(),
-    isConnected: false
+    isConnected: true
   };
 
   // API Routes

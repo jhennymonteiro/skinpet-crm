@@ -171,7 +171,7 @@ export async function syncLeadToAppsScript(
  * Code snippet template for Google Apps Script 2-way immediate sheet synchronization
  */
 export const GOOGLE_APPS_SCRIPT_CODE = `/**
- * Código do Google Apps Script para Sincronização em Tempo Real do Dashboard Comercial
+ * Código do Google Apps Script para Sincronização em Tempo Real do Dashboard | SkinPet
  * 
  * Instruções:
  * 1. Abra sua planilha do Google Sheets.
@@ -181,7 +181,7 @@ export const GOOGLE_APPS_SCRIPT_CODE = `/**
  * 5. Clique no ícone de engrenagem ao lado de "Selecione o tipo" e escolha "App da Web".
  * 6. Em "Quem pode acessar", selecione "Qualquer pessoa" (Qualquer um).
  * 7. Clique em "Implantar" e copie o URL do App da Web gerado.
- * 8. Cole o URL no campo "URL do Google Apps Script" no Dashboard Comercial.
+ * 8. Cole o URL no campo "URL do Google Apps Script" no Dashboard | SkinPet.
  */
 
 function doPost(e) {

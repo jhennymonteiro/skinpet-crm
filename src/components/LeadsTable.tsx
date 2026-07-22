@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Lead, STAGE_COLORS, FunnelStage, FUNNEL_STAGES } from '../types';
 import { formatCurrencyBRL } from '../lib/analytics';
-import { Search, Phone, Edit2, Trash2, ArrowRight, MessageCircle, MoreVertical, Plus } from 'lucide-react';
+import { Search, Phone, Trash2, ArrowRight, MessageCircle, MoreVertical } from 'lucide-react';
 
 interface LeadsTableProps {
   leads: Lead[];
@@ -44,14 +44,6 @@ export const LeadsTable: React.FC<LeadsTableProps> = ({
             Sincronizado diretamente com a planilha do Google Sheets
           </p>
         </div>
-
-        <button
-          onClick={onOpenNewLeadModal}
-          className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all cursor-pointer self-start sm:self-auto"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          <span>Cadastrar Lead</span>
-        </button>
       </div>
 
       {/* Table Component */}
@@ -147,15 +139,6 @@ export const LeadsTable: React.FC<LeadsTableProps> = ({
                           <ArrowRight className="w-4 h-4" />
                         </button>
                       )}
-
-                      {/* Edit Lead Button */}
-                      <button
-                        onClick={() => onEditLead(lead)}
-                        title="Editar Lead"
-                        className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-all"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </button>
 
                       {/* Delete Lead Button */}
                       <button

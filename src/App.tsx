@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { AlertTriangle, RefreshCw, FileSpreadsheet } from 'lucide-react';
 import { Lead, FilterState, PeriodFilter, FunnelStage, SheetsConfig, FUNNEL_STAGES } from './types';
 import { INITIAL_MOCK_LEADS } from './data/mockLeads';
 import {
@@ -32,21 +33,25 @@ import { KanbanBoard } from './components/KanbanBoard';
 import { SheetsModal } from './components/SheetsModal';
 import { LeadModal } from './components/LeadModal';
 
+const DEFAULT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1kYnu0PDKn9oIOOQqYi2oN4qCt9C-da0sS2P4HuXBbTE/edit?gid=0#gid=0';
+const DEFAULT_SPREADSHEET_ID = '1kYnu0PDKn9oIOOQqYi2oN4qCt9C-da0sS2P4HuXBbTE';
+
 export default function App() {
   // Main Data State
-  const [leads, setLeads] = useState<Lead[]>(INITIAL_MOCK_LEADS);
+  const [leads, setLeads] = useState<Lead[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [viewMode, setViewMode] = useState<'dashboard' | 'kanban'>('dashboard');
+  const [connectionError, setConnectionError] = useState<string | null>(null);
 
   // Google Sheets Config State
   const [sheetsConfig, setSheetsConfig] = useState<SheetsConfig>({
-    sheetUrl: '',
-    spreadsheetId: '',
+    sheetUrl: DEFAULT_SHEET_URL,
+    spreadsheetId: DEFAULT_SPREADSHEET_ID,
     appsScriptUrl: '',
     autoSync: true,
     syncIntervalSeconds: 30,
     lastSyncedAt: null,
-    isConnected: false,
+    isConnected: true,
     sheetName: 'Sheet1'
   });
 
@@ -66,50 +71,30 @@ export default function App() {
   const [isLeadModalOpen, setIsLeadModalOpen] = useState(false);
   const [leadToEdit, setLeadToEdit] = useState<Lead | null>(null);
 
-  // Load initial backend server config & leads
-  useEffect(() => {
-    async function loadInitialData() {
-      try {
-        const configRes = await fetch('/api/config');
-        if (configRes.ok) {
-          const cfg = await configRes.json();
-          if (cfg.spreadsheetId || cfg.appsScriptUrl) {
-            setSheetsConfig(cfg);
-          }
-        }
-
-        const leadsRes = await fetch('/api/leads');
-        if (leadsRes.ok) {
-          const serverLeads = await leadsRes.json();
-          if (Array.isArray(serverLeads) && serverLeads.length > 0) {
-            setLeads(serverLeads);
-          }
-        }
-      } catch (err) {
-        console.log('Utilizando dados em memória do servidor.');
-      }
-    }
-    loadInitialData();
-  }, []);
-
   // Sync / Refresh function to pull latest rows from Google Sheets
-  const refreshSheetData = useCallback(async () => {
-    if (!sheetsConfig.spreadsheetId) return;
+  const refreshSheetData = useCallback(async (overrideId?: string, overrideName?: string) => {
+    const idToUse = overrideId || sheetsConfig.spreadsheetId || DEFAULT_SPREADSHEET_ID;
+    const nameToUse = overrideName || sheetsConfig.sheetName || 'Sheet1';
+
+    if (!idToUse) {
+      setConnectionError('Nenhuma planilha configurada.');
+      return false;
+    }
 
     setIsRefreshing(true);
     try {
-      const fetchedLeads = await fetchLeadsFromGoogleSheet(
-        sheetsConfig.spreadsheetId,
-        sheetsConfig.sheetName || 'Sheet1'
-      );
+      const fetchedLeads = await fetchLeadsFromGoogleSheet(idToUse, nameToUse);
 
-      if (fetchedLeads && fetchedLeads.length > 0) {
+      if (fetchedLeads && Array.isArray(fetchedLeads)) {
         setLeads(fetchedLeads);
         setSheetsConfig((prev) => ({
           ...prev,
+          spreadsheetId: idToUse,
+          sheetName: nameToUse,
           isConnected: true,
           lastSyncedAt: new Date().toISOString()
         }));
+        setConnectionError(null);
 
         // Sync with backend proxy
         fetch('/api/leads/sync', {
@@ -117,24 +102,56 @@ export default function App() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ leads: fetchedLeads })
         }).catch(() => {});
+
+        return true;
+      } else {
+        throw new Error('Nenhum dado retornado pela planilha.');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao atualizar planilha:', err);
+      setConnectionError(err?.message || 'A conexão com a planilha do Google Sheets falhou e os dados não puderam ser carregados.');
+      return false;
     } finally {
       setIsRefreshing(false);
     }
   }, [sheetsConfig.spreadsheetId, sheetsConfig.sheetName]);
 
+  // Load initial backend server config & leads
+  useEffect(() => {
+    async function loadInitialData() {
+      let currentId = DEFAULT_SPREADSHEET_ID;
+      let currentName = 'Sheet1';
+
+      try {
+        const configRes = await fetch('/api/config');
+        if (configRes.ok) {
+          const cfg = await configRes.json();
+          if (cfg.spreadsheetId) {
+            setSheetsConfig(cfg);
+            currentId = cfg.spreadsheetId;
+            currentName = cfg.sheetName || 'Sheet1';
+          }
+        }
+      } catch (e) {
+        // ignore config fetch error
+      }
+
+      await refreshSheetData(currentId, currentName);
+    }
+
+    loadInitialData();
+  }, [refreshSheetData]);
+
   // Auto Sync Interval
   useEffect(() => {
-    if (!sheetsConfig.autoSync || !sheetsConfig.spreadsheetId) return;
+    if (!sheetsConfig.autoSync || !sheetsConfig.spreadsheetId || connectionError) return;
 
     const interval = setInterval(() => {
       refreshSheetData();
     }, (sheetsConfig.syncIntervalSeconds || 30) * 1000);
 
     return () => clearInterval(interval);
-  }, [sheetsConfig.autoSync, sheetsConfig.spreadsheetId, sheetsConfig.syncIntervalSeconds, refreshSheetData]);
+  }, [sheetsConfig.autoSync, sheetsConfig.spreadsheetId, sheetsConfig.syncIntervalSeconds, refreshSheetData, connectionError]);
 
   // Handle Save Config from Sheets Modal
   const handleSaveSheetsConfig = async (newConfig: Partial<SheetsConfig>) => {
@@ -159,7 +176,7 @@ export default function App() {
 
     // Trigger immediate fetch if spreadsheetId changed
     if (extractedId) {
-      setTimeout(() => refreshSheetData(), 200);
+      setTimeout(() => refreshSheetData(extractedId, newConfig.sheetName || sheetsConfig.sheetName), 100);
     }
   };
 
@@ -296,6 +313,88 @@ export default function App() {
     });
     return Array.from(set).sort();
   }, [leads]);
+
+  if (connectionError) {
+    return (
+      <div className="min-h-screen bg-slate-50 text-slate-900 font-sans antialiased selection:bg-blue-100 selection:text-blue-900 flex flex-col justify-between">
+        <Header
+          period={filters.period}
+          onPeriodChange={(period: PeriodFilter) => setFilters((f) => ({ ...f, period }))}
+          customStartDate={filters.customStartDate}
+          customEndDate={filters.customEndDate}
+          onCustomDateChange={(customStartDate, customEndDate) =>
+            setFilters((f) => ({ ...f, customStartDate, customEndDate }))
+          }
+          sheetsConfig={sheetsConfig}
+          onOpenSheetsModal={() => setIsSheetsModalOpen(true)}
+          onOpenNewLeadModal={() => {
+            setLeadToEdit(null);
+            setIsLeadModalOpen(true);
+          }}
+          onRefreshData={() => refreshSheetData()}
+          isRefreshing={isRefreshing}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+        />
+
+        <main className="max-w-2xl mx-auto px-4 py-16 text-center my-auto">
+          <div className="bg-white p-8 sm:p-10 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center">
+            <div className="p-4 bg-rose-50 text-rose-600 rounded-2xl mb-5 border border-rose-100">
+              <AlertTriangle className="w-10 h-10" />
+            </div>
+
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2">
+              A conexão com a planilha falhou
+            </h2>
+
+            <p className="text-xs sm:text-sm text-slate-600 mb-6 max-w-md leading-relaxed">
+              Não foi possível carregar os dados comercial da planilha do Google Sheets. Verifique sua conexão com a internet ou se a planilha permanece acessível.
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full sm:w-auto">
+              <button
+                onClick={() => refreshSheetData()}
+                disabled={isRefreshing}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-xs rounded-xl shadow-xs transition-all cursor-pointer disabled:opacity-50"
+              >
+                <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                <span>Tentar novamente</span>
+              </button>
+
+              <button
+                onClick={() => setIsSheetsModalOpen(true)}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 font-semibold text-xs rounded-xl border border-slate-300 transition-all cursor-pointer"
+              >
+                <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                <span>Reconectar planilha</span>
+              </button>
+            </div>
+          </div>
+        </main>
+
+        {/* Reconnect Sheets Modal */}
+        <SheetsModal
+          isOpen={isSheetsModalOpen}
+          onClose={() => setIsSheetsModalOpen(false)}
+          config={sheetsConfig}
+          onSaveConfig={handleSaveSheetsConfig}
+          onTestConnection={handleTestConnection}
+        />
+
+        <LeadModal
+          isOpen={isLeadModalOpen}
+          onClose={() => {
+            setIsLeadModalOpen(false);
+            setLeadToEdit(null);
+          }}
+          onSave={handleSaveLead}
+          leadToEdit={leadToEdit}
+          availableOrigens={availableOrigens}
+          availableQueixas={availableQueixas}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans antialiased selection:bg-blue-100 selection:text-blue-900">
