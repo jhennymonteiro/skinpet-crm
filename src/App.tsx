@@ -71,7 +71,7 @@ export default function App() {
   const [isLeadModalOpen, setIsLeadModalOpen] = useState(false);
   const [leadToEdit, setLeadToEdit] = useState<Lead | null>(null);
 
-  // Sync / Refresh function to pull latest rows from Google Sheets
+  // Sync / Refresh function to pull latest rows from Google Sheets with up to 3 automatic retries
   const refreshSheetData = useCallback(async (overrideId?: string, overrideName?: string) => {
     const idToUse = overrideId || sheetsConfig.spreadsheetId || DEFAULT_SPREADSHEET_ID;
     const nameToUse = overrideName || sheetsConfig.sheetName || 'Sheet1';
@@ -82,38 +82,54 @@ export default function App() {
     }
 
     setIsRefreshing(true);
-    try {
-      const fetchedLeads = await fetchLeadsFromGoogleSheet(idToUse, nameToUse);
 
-      if (fetchedLeads && Array.isArray(fetchedLeads)) {
-        setLeads(fetchedLeads);
-        setSheetsConfig((prev) => ({
-          ...prev,
-          spreadsheetId: idToUse,
-          sheetName: nameToUse,
-          isConnected: true,
-          lastSyncedAt: new Date().toISOString()
-        }));
-        setConnectionError(null);
+    const MAX_RETRIES = 3; // 1 initial attempt + 3 retries = 4 attempts total
+    let lastError: any = null;
 
-        // Sync with backend proxy
-        fetch('/api/leads/sync', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ leads: fetchedLeads })
-        }).catch(() => {});
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        const fetchedLeads = await fetchLeadsFromGoogleSheet(idToUse, nameToUse);
 
-        return true;
-      } else {
-        throw new Error('Nenhum dado retornado pela planilha.');
+        if (fetchedLeads && Array.isArray(fetchedLeads)) {
+          setLeads(fetchedLeads);
+          setSheetsConfig((prev) => ({
+            ...prev,
+            spreadsheetId: idToUse,
+            sheetName: nameToUse,
+            isConnected: true,
+            lastSyncedAt: new Date().toISOString()
+          }));
+          setConnectionError(null);
+
+          // Sync with backend proxy
+          fetch('/api/leads/sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ leads: fetchedLeads })
+          }).catch(() => {});
+
+          setIsRefreshing(false);
+          return true;
+        } else {
+          throw new Error('Nenhum dado retornado pela planilha.');
+        }
+      } catch (err: any) {
+        lastError = err;
+        console.warn(`Tentativa ${attempt + 1}/${MAX_RETRIES + 1} de conexão com a planilha falhou:`, err?.message || err);
+
+        // If there are remaining retries, wait briefly before retrying
+        if (attempt < MAX_RETRIES) {
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
       }
-    } catch (err: any) {
-      console.error('Erro ao atualizar planilha:', err);
-      setConnectionError(err?.message || 'A conexão com a planilha do Google Sheets falhou e os dados não puderam ser carregados.');
-      return false;
-    } finally {
-      setIsRefreshing(false);
     }
+
+    // All attempts (initial + 3 retries) failed
+    setConnectionError(
+      lastError?.message || 'A conexão com a planilha do Google Sheets falhou e os dados não puderam ser carregados.'
+    );
+    setIsRefreshing(false);
+    return false;
   }, [sheetsConfig.spreadsheetId, sheetsConfig.sheetName]);
 
   // Load initial backend server config & leads
@@ -511,32 +527,13 @@ export default function App() {
             {/* Leads Table */}
             <LeadsTable
               leads={filteredLeads}
-              onEditLead={(lead) => {
-                setLeadToEdit(lead);
-                setIsLeadModalOpen(true);
-              }}
-              onDeleteLead={handleDeleteLead}
-              onAdvanceStage={handleAdvanceStage}
-              onOpenNewLeadModal={() => {
-                setLeadToEdit(null);
-                setIsLeadModalOpen(true);
-              }}
             />
           </>
         ) : (
           /* Kanban Board Mode */
           <KanbanBoard
             leads={filteredLeads}
-            onEditLead={(lead) => {
-              setLeadToEdit(lead);
-              setIsLeadModalOpen(true);
-            }}
-            onDeleteLead={handleDeleteLead}
             onUpdateStage={handleUpdateLeadStage}
-            onOpenNewLeadModal={() => {
-              setLeadToEdit(null);
-              setIsLeadModalOpen(true);
-            }}
           />
         )}
 

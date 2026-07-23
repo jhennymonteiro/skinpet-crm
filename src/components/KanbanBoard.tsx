@@ -1,22 +1,16 @@
 import React from 'react';
 import { Lead, FunnelStage, FUNNEL_STAGES, STAGE_COLORS } from '../types';
 import { formatCurrencyBRL } from '../lib/analytics';
-import { Trash2, MessageCircle } from 'lucide-react';
+import { MessageCircle } from 'lucide-react';
 
 interface KanbanBoardProps {
   leads: Lead[];
-  onEditLead: (lead: Lead) => void;
-  onDeleteLead: (leadId: string) => void;
   onUpdateStage: (lead: Lead, newStage: FunnelStage) => void;
-  onOpenNewLeadModal: () => void;
 }
 
 export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   leads,
-  onEditLead,
-  onDeleteLead,
-  onUpdateStage,
-  onOpenNewLeadModal
+  onUpdateStage
 }) => {
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -79,14 +73,6 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                       <span className="font-bold text-xs text-slate-900 leading-tight">
                         {lead.nome}
                       </span>
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={() => onDeleteLead(lead.id)}
-                          className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      </div>
                     </div>
 
                     <div className="text-xs font-extrabold text-blue-600 my-1">

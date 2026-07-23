@@ -96,30 +96,6 @@ export const GlobalFiltersBar: React.FC<GlobalFiltersBarProps> = ({
             ))}
           </select>
 
-          {/* Price Range */}
-          <div className="flex items-center gap-1 bg-slate-50 px-2 py-1.5 border border-slate-200 rounded-xl text-xs">
-            <span className="text-slate-400 font-medium text-[11px]">R$</span>
-            <input
-              type="number"
-              placeholder="Mín"
-              value={filters.valorMin ?? ''}
-              onChange={(e) =>
-                onFilterChange({ valorMin: e.target.value ? Number(e.target.value) : null })
-              }
-              className="w-16 bg-white border border-slate-200 rounded px-1.5 py-0.5 text-xs"
-            />
-            <span className="text-slate-300">-</span>
-            <input
-              type="number"
-              placeholder="Máx"
-              value={filters.valorMax ?? ''}
-              onChange={(e) =>
-                onFilterChange({ valorMax: e.target.value ? Number(e.target.value) : null })
-              }
-              className="w-16 bg-white border border-slate-200 rounded px-1.5 py-0.5 text-xs"
-            />
-          </div>
-
           {/* Reset Filters */}
           {hasActiveFilters && (
             <button
@@ -161,18 +137,6 @@ export const GlobalFiltersBar: React.FC<GlobalFiltersBarProps> = ({
             <span className="bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-0.5 rounded-full font-semibold flex items-center gap-1">
               Queixa: {filters.queixa}
               <button onClick={() => onFilterChange({ queixa: null })} className="hover:text-amber-950">
-                <X className="w-3 h-3" />
-              </button>
-            </span>
-          )}
-
-          {(filters.valorMin !== null || filters.valorMax !== null) && (
-            <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 rounded-full font-semibold flex items-center gap-1">
-              Valor: {filters.valorMin ?? 0} - {filters.valorMax ?? '∞'}
-              <button
-                onClick={() => onFilterChange({ valorMin: null, valorMax: null })}
-                className="hover:text-emerald-950"
-              >
                 <X className="w-3 h-3" />
               </button>
             </span>

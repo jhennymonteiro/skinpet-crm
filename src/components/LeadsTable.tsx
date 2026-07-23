@@ -1,22 +1,14 @@
 import React, { useState } from 'react';
-import { Lead, STAGE_COLORS, FunnelStage, FUNNEL_STAGES } from '../types';
+import { Lead, STAGE_COLORS } from '../types';
 import { formatCurrencyBRL } from '../lib/analytics';
-import { Search, Phone, Trash2, ArrowRight, MessageCircle, MoreVertical } from 'lucide-react';
+import { MessageCircle } from 'lucide-react';
 
 interface LeadsTableProps {
   leads: Lead[];
-  onEditLead: (lead: Lead) => void;
-  onDeleteLead: (leadId: string) => void;
-  onAdvanceStage: (lead: Lead) => void;
-  onOpenNewLeadModal: () => void;
 }
 
 export const LeadsTable: React.FC<LeadsTableProps> = ({
-  leads,
-  onEditLead,
-  onDeleteLead,
-  onAdvanceStage,
-  onOpenNewLeadModal
+  leads
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
@@ -57,21 +49,18 @@ export const LeadsTable: React.FC<LeadsTableProps> = ({
               <th className="py-3 px-4">Queixa do Cliente</th>
               <th className="py-3 px-4">Valor Estimado</th>
               <th className="py-3 px-4">Fase do Funil</th>
-              <th className="py-3 px-4 text-right">Ações</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 font-medium">
             {paginatedLeads.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-8 text-center text-slate-400">
+                <td colSpan={6} className="py-8 text-center text-slate-400">
                   Nenhum lead encontrado para os filtros selecionados.
                 </td>
               </tr>
             ) : (
               paginatedLeads.map((lead) => {
                 const colors = STAGE_COLORS[lead.fase] || STAGE_COLORS['Entrada'];
-                const stageIndex = FUNNEL_STAGES.indexOf(lead.fase);
-                const canAdvance = stageIndex < FUNNEL_STAGES.length - 2; // Can advance until Follow Up -> Fechado
 
                 return (
                   <tr key={lead.id} className="hover:bg-slate-50/80 transition-colors group">
@@ -124,31 +113,6 @@ export const LeadsTable: React.FC<LeadsTableProps> = ({
                       <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold border ${colors.badgeBg}`}>
                         {lead.fase}
                       </span>
-                    </td>
-
-                    {/* Actions */}
-                    <td className="py-3.5 px-4 text-right space-x-1">
-                      
-                      {/* Advance Stage Button */}
-                      {canAdvance && (
-                        <button
-                          onClick={() => onAdvanceStage(lead)}
-                          title="Avançar Etapa"
-                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                        >
-                          <ArrowRight className="w-4 h-4" />
-                        </button>
-                      )}
-
-                      {/* Delete Lead Button */}
-                      <button
-                        onClick={() => onDeleteLead(lead.id)}
-                        title="Excluir Lead"
-                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-
                     </td>
                   </tr>
                 );
